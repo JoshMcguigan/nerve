@@ -25,7 +25,12 @@ impl CompiledBinary {
 
         let assembly_file = source_file.path().clone().with_extension("s");
         let object_file = assembly_file.clone().with_extension("o");
-        let compiled_binary = object_file.clone().with_extension("");
+        // Using a non-standard ".bin" extension for the compiled binary here
+        // because the tempfile has no extension. There isn't an easy way to
+        // create the temp file with an extension, and if the compiled binary
+        // overwrites the temp file, then it is deleted when the temp file goes
+        // out of scope.
+        let compiled_binary = object_file.clone().with_extension("bin");
 
         // compile asm into object file
         assert!(
@@ -49,11 +54,6 @@ impl CompiledBinary {
                 .expect("Failed to execute process")
                 .success()
         );
-
-        // TODO determine why this is needed
-        // It seems the compiled binary is deleted at the same time as the temp file
-        // unless the temp file is marked to be kept
-        source_file.keep().expect("Failed to mark file for keeps");
 
         Self {
             compiled_binary,
