@@ -15,13 +15,11 @@ impl CompiledBinary {
         write!(source_file, "{}", source_code).expect("failed to write to source file");
 
         // compile bf to asm
-        assert!(
-            Command::new("target/debug/nerve")
-                .arg(format!("{}", source_file.path().to_string_lossy()))
-                .status()
-                .expect("Failed to execute process")
-                .success()
-        );
+        assert!(Command::new("target/debug/nerve")
+            .arg(format!("{}", source_file.path().to_string_lossy()))
+            .status()
+            .expect("Failed to execute process")
+            .success());
 
         let assembly_file = source_file.path().clone().with_extension("s");
         let object_file = assembly_file.clone().with_extension("o");
@@ -33,31 +31,29 @@ impl CompiledBinary {
         let compiled_binary = object_file.clone().with_extension("bin");
 
         // compile asm into object file
-        assert!(
-            Command::new("sh")
-                .arg("-c")
-                .arg(format!(
-                        "nasm {} -f elf64 -o {}", 
-                        assembly_file.to_string_lossy(),
-                        object_file.to_string_lossy(),
-                    ))
-                .status()
-                .expect("Failed to execute process")
-                .success()
-        );
+        assert!(Command::new("sh")
+            .arg("-c")
+            .arg(format!(
+                "nasm {} -f elf64 -o {}",
+                assembly_file.to_string_lossy(),
+                object_file.to_string_lossy(),
+            ))
+            .status()
+            .expect("Failed to execute process")
+            .success());
 
         // link asm object file into host binary
-        assert!(
-            Command::new("ld")
-                .args(&[&object_file.to_string_lossy(), "-o", &compiled_binary.to_string_lossy()])
-                .status()
-                .expect("Failed to execute process")
-                .success()
-        );
+        assert!(Command::new("ld")
+            .args(&[
+                &object_file.to_string_lossy(),
+                "-o",
+                &compiled_binary.to_string_lossy()
+            ])
+            .status()
+            .expect("Failed to execute process")
+            .success());
 
-        Self {
-            compiled_binary,
-        }
+        Self { compiled_binary }
     }
 
     pub fn test(&self, input: &str, expected_output: &str) {
@@ -65,12 +61,15 @@ impl CompiledBinary {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
-            .expect(
-                &format!("Failed to spawn process {}", &self.compiled_binary.to_string_lossy())
-            );
+            .expect(&format!(
+                "Failed to spawn process {}",
+                &self.compiled_binary.to_string_lossy()
+            ));
 
         let stdin = child.stdin.as_mut().expect("Failed to open stdin");
-        stdin.write_all(input.as_bytes()).expect("Failed to write to stdin");
+        stdin
+            .write_all(input.as_bytes())
+            .expect("Failed to write to stdin");
 
         let output = child.wait_with_output().expect("Failed to read stdout");
         assert_eq!(String::from_utf8_lossy(&output.stdout), expected_output);

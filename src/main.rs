@@ -1,12 +1,17 @@
-use std::{fs, fs::File, io::Read, path::{Path, PathBuf}};
+use std::{
+    fs,
+    fs::File,
+    io::Read,
+    path::{Path, PathBuf},
+};
 
 type Result<T> = std::result::Result<T, CompilerError>;
 
 fn main() -> Result<()> {
-    let config : CompilerConfig = read_config()?;
-    let source_code : Vec<u8> = read_source(&config.source_file_path)?;
-    let commands : Vec<Command> = parse(source_code)?;
-    let asm : String = compile(commands);
+    let config: CompilerConfig = read_config()?;
+    let source_code: Vec<u8> = read_source(&config.source_file_path)?;
+    let commands: Vec<Command> = parse(source_code)?;
+    let asm: String = compile(commands);
     write_to_file(asm, &config.output_file_path())?;
 
     Ok(())
@@ -40,8 +45,7 @@ fn read_config() -> Result<CompilerConfig> {
 }
 
 fn read_source(source_file_path: &Path) -> Result<Vec<u8>> {
-    let mut f = File::open(source_file_path)
-        .map_err(|_| CompilerError::SourceFileRead)?;
+    let mut f = File::open(source_file_path).map_err(|_| CompilerError::SourceFileRead)?;
     let mut buffer = Vec::new();
     f.read_to_end(&mut buffer)
         .map_err(|_| CompilerError::SourceFileRead)?;
@@ -63,32 +67,18 @@ fn parse_block(mut remaining_source: &[u8]) -> (Vec<Command>, &[u8]) {
     while let Some((byte, rem)) = remaining_source.split_first() {
         remaining_source = rem;
         let command = match byte {
-            b'+' => {
-                Command::IncrementCell
-            },
-            b'-' => {
-                Command::DecrementCell
-            },
-            b'>' => {
-                Command::IncrementPointer
-            },
-            b'<' => {
-                Command::DecrementPointer
-            },
+            b'+' => Command::IncrementCell,
+            b'-' => Command::DecrementCell,
+            b'>' => Command::IncrementPointer,
+            b'<' => Command::DecrementPointer,
             b'[' => {
                 let (commands_in_the_loop, rem) = parse_block(remaining_source);
                 remaining_source = rem;
                 Command::While(commands_in_the_loop)
-            },
-            b']' => {
-                break
-            },
-            b'.' => {
-                Command::Output
-            },
-            b',' => {
-                Command::Input
-            },
+            }
+            b']' => break,
+            b'.' => Command::Output,
+            b',' => Command::Input,
             _ => continue, // all other byte patterns ignored per language spec
         };
 
@@ -113,17 +103,21 @@ fn compile(commands: Vec<Command>) -> String {
     // store pointer to buffer in register R8
     s += "\tmov R8, buffer\n";
 
-    s = compile_commands(s, &commands);
+    s = compile_commands(s, &commands, 0).0;
 
     // exit with status code 0
     s += "\tmov rdi, 0\n";
     s += "\tmov rax, 60\n";
     s += "\tsyscall";
-    
+
     s
 }
 
-fn compile_commands(mut s: String, commands: &[Command]) -> String {
+fn compile_commands(
+    mut s: String,
+    commands: &[Command],
+    mut next_loop_number: u16,
+) -> (String, u16) {
     for command in commands {
         match command {
             Command::IncrementPointer => s += "\tinc R8\n",
@@ -137,33 +131,35 @@ fn compile_commands(mut s: String, commands: &[Command]) -> String {
                 s += "\tmov rdx, 1\n"; // 1 = write a single byte
                 s += "\tmov rax, 1\n"; // 1 = syscall id
                 s += "\tsyscall\n";
-            },
+            }
             Command::While(commands) => {
+                let this_loop_number = next_loop_number;
+                next_loop_number += 1;
                 s += "\tcmp byte[R8], 0\n";
-                s += "\tje loop_1_end\n";
-                s += "\tloop_1_start:\n";
-                s = compile_commands(s, commands);
+                s += &format!("\tje loop_{}_end\n", this_loop_number);
+                s += &format!("\tloop_{}_start:\n", this_loop_number);
+                let res = compile_commands(s, commands, next_loop_number);
+                s = res.0;
+                next_loop_number = res.1;
                 s += "\tcmp byte[R8], 0\n";
-                s += "\tjne loop_1_start\n";
-                s += "\tloop_1_end:\n";
-            },
+                s += &format!("\tjne loop_{}_start\n", this_loop_number);
+                s += &format!("\tloop_{}_end:\n", this_loop_number);
+            }
             _ => unimplemented!(),
         };
     }
-    
-    s
+
+    (s, next_loop_number)
 }
 
 fn write_to_file(asm: String, file_path: &Path) -> Result<()> {
-    fs::write(file_path, asm)
-        .map_err(|_| CompilerError::OutputFileWrite)
+    fs::write(file_path, asm).map_err(|_| CompilerError::OutputFileWrite)
 }
 
 impl CompilerConfig {
     fn output_file_path(&self) -> PathBuf {
         let mut output_file_path = self.source_file_path.clone();
-        output_file_path
-            .set_extension("s");
+        output_file_path.set_extension("s");
         output_file_path
     }
 }
