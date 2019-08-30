@@ -113,6 +113,17 @@ fn compile(commands: Vec<Command>) -> String {
     // store pointer to buffer in register R8
     s += "\tmov R8, buffer\n";
 
+    s = compile_commands(s, &commands);
+
+    // exit with status code 0
+    s += "\tmov rdi, 0\n";
+    s += "\tmov rax, 60\n";
+    s += "\tsyscall";
+    
+    s
+}
+
+fn compile_commands(mut s: String, commands: &[Command]) -> String {
     for command in commands {
         match command {
             Command::IncrementPointer => s += "\tinc R8\n",
@@ -120,21 +131,25 @@ fn compile(commands: Vec<Command>) -> String {
             Command::IncrementCell => s += "\tinc byte[R8]\n",
             Command::DecrementCell => s += "\tdec byte[R8]\n",
             Command::Output => {
-               // use syscall to write a single byte to std out
-               s += "\tmov rdi, 1\n"; // 1 = std out
-               s += "\tmov rsi, R8\n";
-               s += "\tmov rdx, 1\n"; // 1 = write a single byte
-               s += "\tmov rax, 1\n"; // 1 = syscall id
-               s += "\tsyscall\n";
+                // use syscall to write a single byte to std out
+                s += "\tmov rdi, 1\n"; // 1 = std out
+                s += "\tmov rsi, R8\n";
+                s += "\tmov rdx, 1\n"; // 1 = write a single byte
+                s += "\tmov rax, 1\n"; // 1 = syscall id
+                s += "\tsyscall\n";
+            },
+            Command::While(commands) => {
+                s += "\tcmp byte[R8], 0\n";
+                s += "\tje loop_1_end\n";
+                s += "\tloop_1_start:\n";
+                s = compile_commands(s, commands);
+                s += "\tcmp byte[R8], 0\n";
+                s += "\tjne loop_1_start\n";
+                s += "\tloop_1_end:\n";
             },
             _ => unimplemented!(),
         };
     }
-
-    // exit with status code 0
-    s += "\tmov rdi, 0\n";
-    s += "\tmov rax, 60\n";
-    s += "\tsyscall";
     
     s
 }
