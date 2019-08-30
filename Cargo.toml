@@ -5,3 +5,6 @@ authors = ["Josh Mcguigan"]
 edition = "2018"
 
 [dependencies]
+
+[dev-dependencies]
+tempfile = "3"

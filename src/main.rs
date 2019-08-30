@@ -35,7 +35,7 @@ enum Command {
 
 fn read_config() -> Result<CompilerConfig> {
     Ok(CompilerConfig {
-        source_file_path: PathBuf::from("test.b"),
+        source_file_path: PathBuf::from(std::env::args().nth(1).unwrap()),
     })
 }
 
