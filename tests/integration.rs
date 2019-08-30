@@ -30,3 +30,13 @@ fn multiple_loops() {
     let expected_output = "";
     compiled_binary.test(input, expected_output);
 }
+
+#[test]
+fn hello_world() {
+    let source_code = "++++++++[>++++[>++>+++>+++>+<<<<-]>+>->+>>+[<]<-]>>.>>---.+++++++..+++.>.<<-.>.+++.------.--------.>+.>++.";
+    let compiled_binary = CompiledBinary::new(source_code);
+
+    let input = "";
+    let expected_output = "Hello World!\n";
+    compiled_binary.test(input, expected_output);
+}
