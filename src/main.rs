@@ -99,44 +99,44 @@ fn parse_block(mut remaining_source: &[u8]) -> (Vec<Command>, &[u8]) {
 }
 
 fn compile(commands: Vec<Command>) -> String {
-	let mut s = String::new();
+    let mut s = String::new();
 
-	s += "section .bss\n";
-	// define buffer of 30_000 bytes, initialized to zero
-	s += "\tbuffer: resb 30000\n\n";
+    s += "section .bss\n";
+    // define buffer of 30_000 bytes, initialized to zero
+    s += "\tbuffer: resb 30000\n\n";
 
-	s += "section .text\n";
-	s += "\tglobal _start\n\n";
+    s += "section .text\n";
+    s += "\tglobal _start\n\n";
 
-	s += "_start:\n";
+    s += "_start:\n";
 
-	// store pointer to buffer in register R8
-	s += "\tmov R8, buffer\n";
+    // store pointer to buffer in register R8
+    s += "\tmov R8, buffer\n";
 
-	for command in commands {
-            match command {
-                Command::IncrementPointer => s += "\tinc R8\n",
-                Command::DecrementPointer => s += "\tdec R8\n",
-                Command::IncrementCell => s += "\tinc byte[R8]\n",
-                Command::DecrementCell => s += "\tdec byte[R8]\n",
-                Command::Output => {
-                   // use syscall to write a single byte to std out
-                   s += "\tmov rdi, 1\n"; // 1 = std out
-                   s += "\tmov rsi, R8\n";
-                   s += "\tmov rdx, 1\n"; // 1 = write a single byte
-                   s += "\tmov rax, 1\n"; // 1 = syscall id
-                   s += "\tsyscall\n";
-                },
-                _ => unimplemented!(),
-            };
-	}
+    for command in commands {
+        match command {
+            Command::IncrementPointer => s += "\tinc R8\n",
+            Command::DecrementPointer => s += "\tdec R8\n",
+            Command::IncrementCell => s += "\tinc byte[R8]\n",
+            Command::DecrementCell => s += "\tdec byte[R8]\n",
+            Command::Output => {
+               // use syscall to write a single byte to std out
+               s += "\tmov rdi, 1\n"; // 1 = std out
+               s += "\tmov rsi, R8\n";
+               s += "\tmov rdx, 1\n"; // 1 = write a single byte
+               s += "\tmov rax, 1\n"; // 1 = syscall id
+               s += "\tsyscall\n";
+            },
+            _ => unimplemented!(),
+        };
+    }
 
-	// exit with status code 0
-	s += "\tmov rdi, 0\n";
-	s += "\tmov rax, 60\n";
-	s += "\tsyscall";
-	
-	s
+    // exit with status code 0
+    s += "\tmov rdi, 0\n";
+    s += "\tmov rax, 60\n";
+    s += "\tsyscall";
+    
+    s
 }
 
 fn write_to_file(asm: String, file_path: &Path) -> Result<()> {
