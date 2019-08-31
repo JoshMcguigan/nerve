@@ -33,6 +33,7 @@ fn multiple_loops() {
 
 #[test]
 fn hello_world() {
+    // source code from http://www.hevanet.com/cristofd/brainfuck/short.b
     let source_code = "++++++++[>++++[>++>+++>+++>+<<<<-]>+>->+>>+[<]<-]>>.>>---.+++++++..+++.>.<<-.>.+++.------.--------.>+.>++.";
     let compiled_binary = CompiledBinary::new(source_code);
 
@@ -43,6 +44,7 @@ fn hello_world() {
 
 #[test]
 fn reverse_input() {
+    // source code from http://www.hevanet.com/cristofd/brainfuck/short.b
     let source_code = ">,[>,]<[.<]";
     let compiled_binary = CompiledBinary::new(source_code);
 
