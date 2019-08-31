@@ -19,6 +19,7 @@ fn main() -> Result<()> {
 
 #[derive(Debug)]
 enum CompilerError {
+    MissingArg,
     SourceFileRead,
     UnmatchedBracket,
     OutputFileWrite,
@@ -39,8 +40,10 @@ enum Command {
 }
 
 fn read_config() -> Result<CompilerConfig> {
+    let file_path = std::env::args().nth(1)
+        .ok_or(CompilerError::MissingArg)?;
     Ok(CompilerConfig {
-        source_file_path: PathBuf::from(std::env::args().nth(1).unwrap()),
+        source_file_path: PathBuf::from(file_path),
     })
 }
 
