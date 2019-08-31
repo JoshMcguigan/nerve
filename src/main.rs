@@ -124,6 +124,14 @@ fn compile_commands(
             Command::DecrementPointer => s += "\tdec R8\n",
             Command::IncrementCell => s += "\tinc byte[R8]\n",
             Command::DecrementCell => s += "\tdec byte[R8]\n",
+            Command::Input => {
+                // use syscall to read a single byte from std in
+                s += "\tmov rdi, 0\n"; // 0 = std in
+                s += "\tmov rsi, R8\n";
+                s += "\tmov rdx, 1\n"; // 1 = read a single byte
+                s += "\tmov rax, 0\n"; // 0 = syscall id
+                s += "\tsyscall\n";
+            }
             Command::Output => {
                 // use syscall to write a single byte to std out
                 s += "\tmov rdi, 1\n"; // 1 = std out
@@ -145,7 +153,6 @@ fn compile_commands(
                 s += &format!("\tjne loop_{}_start\n", this_loop_number);
                 s += &format!("\tloop_{}_end:\n", this_loop_number);
             }
-            _ => unimplemented!(),
         };
     }
 

@@ -40,3 +40,13 @@ fn hello_world() {
     let expected_output = "Hello World!\n";
     compiled_binary.test(input, expected_output);
 }
+
+#[test]
+fn reverse_input() {
+    let source_code = ">,[>,]<[.<]";
+    let compiled_binary = CompiledBinary::new(source_code);
+
+    let input = "12345";
+    let expected_output = "54321";
+    compiled_binary.test(input, expected_output);
+}
