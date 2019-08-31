@@ -40,8 +40,7 @@ enum Command {
 }
 
 fn read_config() -> Result<CompilerConfig> {
-    let file_path = std::env::args().nth(1)
-        .ok_or(CompilerError::MissingArg)?;
+    let file_path = std::env::args().nth(1).ok_or(CompilerError::MissingArg)?;
     Ok(CompilerConfig {
         source_file_path: PathBuf::from(file_path),
     })

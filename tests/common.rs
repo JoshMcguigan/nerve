@@ -21,8 +21,8 @@ impl CompiledBinary {
             .expect("Failed to execute process")
             .success());
 
-        let assembly_file = source_file.path().clone().with_extension("s");
-        let object_file = assembly_file.clone().with_extension("o");
+        let assembly_file = source_file.path().with_extension("s");
+        let object_file = assembly_file.with_extension("o");
         // Using a non-standard ".bin" extension for the compiled binary here
         // because the tempfile has no extension. There isn't an easy way to
         // create the temp file with an extension, and if the compiled binary
@@ -62,10 +62,12 @@ impl CompiledBinary {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
-            .expect(&format!(
-                "Failed to spawn process {}",
-                &self.compiled_binary.to_string_lossy()
-            ));
+            .unwrap_or_else(|_| {
+                panic!(format!(
+                    "Failed to spawn process {}",
+                    &self.compiled_binary.to_string_lossy()
+                ))
+            });
 
         let stdin = child.stdin.as_mut().expect("Failed to open stdin");
         stdin
