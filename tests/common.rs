@@ -31,13 +31,14 @@ impl CompiledBinary {
         let compiled_binary = object_file.clone().with_extension("bin");
 
         // compile asm into object file
-        assert!(Command::new("sh")
-            .arg("-c")
-            .arg(format!(
-                "nasm {} -f elf64 -o {}",
-                assembly_file.to_string_lossy(),
-                object_file.to_string_lossy(),
-            ))
+        assert!(Command::new("nasm")
+            .args(&[
+                &assembly_file.to_string_lossy(),
+                "-f",
+                "elf64",
+                "-o",
+                &object_file.to_string_lossy(),
+            ])
             .status()
             .expect("Failed to execute process")
             .success());
