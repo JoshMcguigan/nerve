@@ -19,3 +19,5 @@ jobs:
       run: cargo clippy --all-targets --all-features -- -D warnings
     - name: Format
       run: cargo fmt --all -- --check
+    - name: Benchmarks
+      run: cargo bench

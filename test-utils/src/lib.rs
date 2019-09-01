@@ -1,7 +1,7 @@
 use std::{
     io::Write,
     path::PathBuf,
-    process::{Command, Stdio},
+    process::{Command, Output, Stdio},
 };
 use tempfile::NamedTempFile;
 
@@ -57,7 +57,8 @@ impl CompiledBinary {
         Self { compiled_binary }
     }
 
-    pub fn test(&self, input: &str, expected_output: &str) {
+    /// Use this method for performance testing
+    pub fn run(&self, input: &str) -> Output {
         let mut child = Command::new(&self.compiled_binary)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -74,7 +75,11 @@ impl CompiledBinary {
             .write_all(input.as_bytes())
             .expect("Failed to write to stdin");
 
-        let output = child.wait_with_output().expect("Failed to read stdout");
+        child.wait_with_output().expect("Failed to read stdout")
+    }
+
+    pub fn test(&self, input: &str, expected_output: &str) {
+        let output = self.run(input);
         assert_eq!(String::from_utf8_lossy(&output.stdout), expected_output);
     }
 }

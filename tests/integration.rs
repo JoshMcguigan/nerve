@@ -1,5 +1,4 @@
-mod common;
-use common::CompiledBinary;
+use test_utils::CompiledBinary;
 
 #[test]
 fn output_a() {
