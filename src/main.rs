@@ -2,7 +2,9 @@ use std::{
     fs,
     fs::File,
     io::Read,
+    iter::Peekable,
     path::{Path, PathBuf},
+    slice,
 };
 
 type Result<T> = std::result::Result<T, CompilerError>;
@@ -11,7 +13,7 @@ fn main() -> Result<()> {
     let config: CompilerConfig = read_config()?;
     let source_code: Vec<u8> = read_source(&config.source_file_path)?;
     let commands: Vec<Command> = parse(source_code)?;
-    let optimized_commands : Vec<OptimizedCommand> = optimize(&commands);
+    let optimized_commands: Vec<OptimizedCommand> = optimize(&commands);
     let asm: String = emit_asm(&optimized_commands);
     write_to_file(asm, &config.output_file_path())?;
 
@@ -30,6 +32,7 @@ struct CompilerConfig {
     source_file_path: PathBuf,
 }
 
+#[derive(PartialEq)]
 enum Command {
     IncrementCell,
     DecrementCell,
@@ -104,12 +107,29 @@ fn parse_block(mut remaining_source: &[u8]) -> (Vec<Command>, &[u8]) {
 fn optimize(commands: &[Command]) -> Vec<OptimizedCommand> {
     let mut optimized_commands = vec![];
 
-    for command in commands {
+    let mut iter = commands.iter().peekable();
+    while let Some(command) = iter.next() {
         let optimized_command = match command {
-            Command::IncrementCell => OptimizedCommand::IncrementCell(1),
-            Command::DecrementCell => OptimizedCommand::DecrementCell(1),
-            Command::IncrementPointer => OptimizedCommand::IncrementPointer(1),
-            Command::DecrementPointer => OptimizedCommand::DecrementPointer(1),
+            Command::IncrementCell => {
+                let mut num = 1;
+                num += consume_commands(Command::IncrementCell, &mut iter);
+                OptimizedCommand::IncrementCell(num)
+            }
+            Command::DecrementCell => {
+                let mut num = 1;
+                num += consume_commands(Command::DecrementCell, &mut iter);
+                OptimizedCommand::DecrementCell(num)
+            }
+            Command::IncrementPointer => {
+                let mut num = 1;
+                num += consume_commands(Command::IncrementPointer, &mut iter);
+                OptimizedCommand::IncrementPointer(num)
+            }
+            Command::DecrementPointer => {
+                let mut num = 1;
+                num += consume_commands(Command::DecrementPointer, &mut iter);
+                OptimizedCommand::DecrementPointer(num)
+            }
             Command::While(commands) => OptimizedCommand::While(optimize(&commands)),
             Command::Output => OptimizedCommand::Output,
             Command::Input => OptimizedCommand::Input,
@@ -119,6 +139,16 @@ fn optimize(commands: &[Command]) -> Vec<OptimizedCommand> {
     }
 
     optimized_commands
+}
+
+fn consume_commands(command_type: Command, iter: &mut Peekable<slice::Iter<'_, Command>>) -> u16 {
+    let mut num = 0;
+    while iter.peek() == Some(&&command_type) {
+        iter.next();
+        num += 1;
+    }
+
+    num
 }
 
 fn emit_asm(commands: &[OptimizedCommand]) -> String {
@@ -153,10 +183,10 @@ fn emit_asm_for_commands(
 ) -> (String, u16) {
     for command in commands {
         match command {
+            OptimizedCommand::IncrementCell(num) => s += &format!("\tadd byte[R8], {}\n", num),
+            OptimizedCommand::DecrementCell(num) => s += &format!("\tsub byte[R8], {}\n", num),
             OptimizedCommand::IncrementPointer(num) => s += &format!("\tadd R8, {}\n", num),
-            OptimizedCommand::DecrementPointer(num) => s += "\tdec R8\n",
-            OptimizedCommand::IncrementCell(num) => s += "\tinc byte[R8]\n",
-            OptimizedCommand::DecrementCell(num) => s += "\tdec byte[R8]\n",
+            OptimizedCommand::DecrementPointer(num) => s += &format!("\tsub R8, {}\n", num),
             OptimizedCommand::Input => {
                 // use syscall to read a single byte from std in
                 s += "\tmov rdi, 0\n"; // 0 = std in
