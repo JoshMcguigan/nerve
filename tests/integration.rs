@@ -51,3 +51,23 @@ fn reverse_input() {
     let expected_output = "54321";
     compiled_binary.test(input, expected_output);
 }
+
+#[test]
+fn bench() {
+    let source_code = include_str!("../bf-examples/bench.b");
+    let compiled_binary = CompiledBinary::new(source_code);
+
+    let input = "";
+    let expected_output = include_str!("../bf-examples/bench.out");
+    compiled_binary.test(input, expected_output);
+}
+
+#[test]
+fn mandel() {
+    let source_code = include_str!("../bf-examples/mandel.b");
+    let compiled_binary = CompiledBinary::new(source_code);
+
+    let input = "";
+    let expected_output = include_str!("../bf-examples/mandel.out");
+    compiled_binary.test(input, expected_output);
+}
