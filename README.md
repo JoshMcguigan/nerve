@@ -24,7 +24,7 @@ Nerve includes an integration test suite which requires `nasm` and `ld` to run. 
 
 ## Benchmarks
 
-Running `cargo bench` will compile and run the example programs in the `bf-examples` directory. These benchmarks measure the performance of the compiled binaries, not the performance of Nerve itself.
+Running `cargo test -- --nocapture` will print the run time of each binary produced by Nerve during integration testing.
 
 ## License
 
