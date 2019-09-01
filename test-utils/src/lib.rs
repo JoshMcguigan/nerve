@@ -2,15 +2,17 @@ use std::{
     io::Write,
     path::PathBuf,
     process::{Command, Output, Stdio},
+    time::SystemTime,
 };
 use tempfile::NamedTempFile;
 
 pub struct CompiledBinary {
     compiled_binary: PathBuf,
+    test_name: &'static str,
 }
 
 impl CompiledBinary {
-    pub fn new(source_code: &str) -> Self {
+    pub fn new(test_name: &'static str, source_code: &str) -> Self {
         let mut source_file = NamedTempFile::new().expect("failed to create source file");
         write!(source_file, "{}", source_code).expect("failed to write to source file");
 
@@ -54,11 +56,13 @@ impl CompiledBinary {
             .expect("Failed to execute process")
             .success());
 
-        Self { compiled_binary }
+        Self {
+            compiled_binary,
+            test_name,
+        }
     }
 
-    /// Use this method for performance testing
-    pub fn run(&self, input: &str) -> Output {
+    fn run(&self, input: &str) -> Output {
         let mut child = Command::new(&self.compiled_binary)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -79,7 +83,12 @@ impl CompiledBinary {
     }
 
     pub fn test(&self, input: &str, expected_output: &str) {
+        let start = SystemTime::now();
         let output = self.run(input);
+        let elapsed = start.elapsed().expect("system time error");
+
+        println!("{} completed in {:?}", &self.test_name, elapsed);
+
         assert_eq!(String::from_utf8_lossy(&output.stdout), expected_output);
     }
 }

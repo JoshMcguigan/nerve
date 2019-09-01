@@ -3,17 +3,9 @@ name = "nerve"
 version = "0.1.0"
 authors = ["Josh Mcguigan"]
 edition = "2018"
+build = "build.rs"
 
 [dependencies]
 
 [dev-dependencies]
 test-utils = { path = "test-utils" }
-criterion = "0.3"
-
-[[bench]]
-name = "bench"
-harness = false
-
-[[bench]]
-name = "mandel"
-harness = false
