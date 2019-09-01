@@ -22,6 +22,10 @@ ld hello.o -o hello
 
 Nerve includes an integration test suite which requires `nasm` and `ld` to run. Once you have installed these dependencies, you can run the test suite with `cargo test`.
 
+## Benchmarks
+
+Running `cargo bench` will compile and run the example programs in the `bf-examples` directory. These benchmarks measure the performance of the compiled binaries, not the performance of Nerve itself.
+
 ## License
 
 Licensed under either of
