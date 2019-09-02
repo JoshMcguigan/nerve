@@ -1,8 +1,12 @@
 use crate::Command;
 use std::{iter::Peekable, slice};
 
+mod shift_elision;
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum OptimizedCommand {
     IncrementCell(u16),
+    IncrementCellAtOffset(u16, u16),
     DecrementCell(u16),
     IncrementPointer(u16),
     DecrementPointer(u16),
@@ -44,6 +48,8 @@ pub fn optimize(commands: &[Command]) -> Vec<OptimizedCommand> {
 
         optimized_commands.push(optimized_command);
     }
+
+    optimized_commands = shift_elision::apply(optimized_commands);
 
     optimized_commands
 }
