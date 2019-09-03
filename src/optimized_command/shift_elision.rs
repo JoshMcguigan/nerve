@@ -2,50 +2,42 @@ use crate::OptimizedCommand;
 
 pub fn apply(commands: Vec<OptimizedCommand>) -> Vec<OptimizedCommand> {
     let mut optimized_commands = vec![];
-    let window_size = 3;
+    let mut i = 0;
 
-    if commands.len() < window_size {
-        return commands;
-    }
-
-    let mut iter = commands.windows(window_size).peekable();
-    while let Some(command_window) = iter.next() {
-        let mut output = match command_window {
-            &[OptimizedCommand::IncrementPointer(pointer_increment), OptimizedCommand::IncrementCell(cell_increment), OptimizedCommand::DecrementPointer(pointer_decrement)] =>
-            {
-                // in this case we are going to handle three instructions, so we need to 
-                // slide the window two additional times
-                // TODO before calling next here, check peek and if None then just append
-                // instructions
-                iter.next();
-                iter.next();
-
+    while i < commands.len() {
+        let mut output = match (commands.get(i), commands.get(i + 1), commands.get(i + 2)) {
+            (
+                Some(OptimizedCommand::IncrementPointer(pointer_increment)),
+                Some(OptimizedCommand::IncrementCell(cell_increment)),
+                Some(OptimizedCommand::DecrementPointer(pointer_decrement)),
+            ) => {
                 let mut out = vec![OptimizedCommand::IncrementCellAtOffset(
-                    pointer_increment,
-                    cell_increment,
+                    *pointer_increment,
+                    *cell_increment,
                 )];
                 if pointer_increment > pointer_decrement {
-                    out.push(
-                        OptimizedCommand::IncrementPointer(pointer_increment - pointer_decrement)
-                    );
+                    out.push(OptimizedCommand::IncrementPointer(
+                        pointer_increment - pointer_decrement,
+                    ));
                 } else if pointer_increment < pointer_decrement {
-                    out.push(
-                        OptimizedCommand::DecrementPointer(pointer_decrement - pointer_increment)
-                    );
+                    out.push(OptimizedCommand::DecrementPointer(
+                        pointer_decrement - pointer_increment,
+                    ));
                 }
+
+                // in this case we are going to handle three instructions
+                i += 3;
+
                 out
             }
-            [command1, command2, command3] => {
-                // if the window iterator has more, only pass through the first command
-                // if the window iterator has no more, we need to pass though three command
-                //   to ensure the final two commands are not lost
-                if iter.peek().is_some() {
-                    vec![command1.clone()]
+            (command1, _, _) => {
+                if let Some(command) = command1 {
+                    i += 1;
+                    vec![command.clone()]
                 } else {
-                    vec![command1.clone(), command2.clone(), command3.clone()]
+                    unreachable!()
                 }
-            },
-            _ => unreachable!(),
+            }
         };
 
         optimized_commands.append(&mut output);
@@ -60,9 +52,7 @@ mod tests {
 
     #[test]
     fn pass_through_short_instruction_set() {
-        let input = vec![
-            OptimizedCommand::IncrementCell(1),
-        ];
+        let input = vec![OptimizedCommand::IncrementCell(1)];
         let expected_output = input.clone();
 
         assert_eq!(expected_output, apply(input));
@@ -186,5 +176,6 @@ mod tests {
         assert_eq!(expected_output, apply(input));
     }
 
-    // TODO handle decrement followed by increment
+    // TODO handle decrement pointer followed by increment pointer
+    // TODO handle decrement cell
 }

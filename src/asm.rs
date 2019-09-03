@@ -33,7 +33,7 @@ fn emit_asm_for_commands(
     for command in commands {
         match command {
             OptimizedCommand::IncrementCell(value) => s += &format!("\tadd byte[R8], {}\n", value),
-            OptimizedCommand::IncrementCellAtOffset(value, offset) => {
+            OptimizedCommand::IncrementCellAtOffset(offset, value) => {
                 s += &format!("\tadd byte[R8 + {}], {}\n", offset, value)
             }
             OptimizedCommand::DecrementCell(value) => s += &format!("\tsub byte[R8], {}\n", value),
