@@ -89,6 +89,7 @@ impl CompiledBinary {
 
         println!("{} completed in {:?}", &self.test_name, elapsed);
 
-        assert_eq!(String::from_utf8_lossy(&output.stdout), expected_output);
+        // Trim end because we don't want to be picky about trailing newline
+        assert_eq!(String::from_utf8_lossy(&output.stdout).trim_end(), expected_output.trim_end());
     }
 }
