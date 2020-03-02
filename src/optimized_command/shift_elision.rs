@@ -4,10 +4,10 @@ pub fn apply(commands: Vec<OptimizedCommand>) -> Vec<OptimizedCommand> {
     let mut optimized_commands = vec![];
     let mut i = 0;
 
-    while i < commands.len() {
-        let mut output = match (commands.get(i), commands.get(i + 1), commands.get(i + 2)) {
+    while let Some(command1) = commands.get(i) {
+        let mut output = match (command1, commands.get(i + 1), commands.get(i + 2)) {
             (
-                Some(OptimizedCommand::IncrementPointer(pointer_increment)),
+                OptimizedCommand::IncrementPointer(pointer_increment),
                 Some(OptimizedCommand::IncrementCell(cell_increment)),
                 Some(OptimizedCommand::DecrementPointer(pointer_decrement)),
             ) => {
@@ -15,14 +15,20 @@ pub fn apply(commands: Vec<OptimizedCommand>) -> Vec<OptimizedCommand> {
                     *pointer_increment,
                     *cell_increment,
                 )];
-                if pointer_increment > pointer_decrement {
-                    out.push(OptimizedCommand::IncrementPointer(
-                        pointer_increment - pointer_decrement,
-                    ));
-                } else if pointer_increment < pointer_decrement {
-                    out.push(OptimizedCommand::DecrementPointer(
-                        pointer_decrement - pointer_increment,
-                    ));
+                match pointer_increment.cmp(pointer_decrement) {
+                    std::cmp::Ordering::Less => {
+                        out.push(OptimizedCommand::DecrementPointer(
+                            pointer_decrement - pointer_increment,
+                        ));
+                    }
+                    // If the increment and decrement were equal, we
+                    // don't need to move the pointer at all
+                    std::cmp::Ordering::Equal => (),
+                    std::cmp::Ordering::Greater => {
+                        out.push(OptimizedCommand::IncrementPointer(
+                            pointer_increment - pointer_decrement,
+                        ));
+                    }
                 }
 
                 // in this case we are going to handle three instructions
@@ -30,13 +36,10 @@ pub fn apply(commands: Vec<OptimizedCommand>) -> Vec<OptimizedCommand> {
 
                 out
             }
-            (command1, _, _) => {
-                if let Some(command) = command1 {
-                    i += 1;
-                    vec![command.clone()]
-                } else {
-                    unreachable!()
-                }
+            (command, _, _) => {
+                // in this branch we are handling a single instruction
+                i += 1;
+                vec![command.clone()]
             }
         };
 
